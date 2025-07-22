@@ -1,3 +1,5 @@
+#TODO pop the last cordinates from the found branching
+
 
 def read_map(filename):
     f=open(filename)
@@ -21,10 +23,10 @@ class walker():
 
     def step(self):
         if self.direction=="^":
-            self.pos[0]+=1
+            self.pos[0]-=1
             self.score+=1
         elif self.direction=="v":
-            self.pos[0]-=1
+            self.pos[0]+=1
             self.score+=1
         elif self.direction==">":
             self.pos[1]+=1
@@ -35,8 +37,9 @@ class walker():
         else:
             print("something went wring")
 
-    def turn(self, char):
-        pass
+    def turn(self, newdirection):
+        self.direction=newdirection
+        self.score+=1000
 
     def check_ways(self):
         forks=0
@@ -49,17 +52,69 @@ class walker():
         if [self.pos[0], self.pos[1]-1] in self.path:
             forks+=1
         return forks
-    def find_paths():
+    
+    def get_possible_paths(self):
+        possible_paths=[]
+        if [self.pos[0]+1,self.pos[1] ] in self.path:
+            possible_paths.append([self.pos[0]+1,self.pos[1]])
+        if [self.pos[0]-1, self.pos[1]] in self.path:
+            possible_paths.append([self.pos[0]-1, self.pos[1]])
+        if [self.pos[0], self.pos[1]+1] in self.path:
+            possible_paths.append([self.pos[0], self.pos[1]+1])
+        if [self.pos[0], self.pos[1]-1] in self.path:
+            possible_paths.append([self.pos[0], self.pos[1]-1])
+        return possible_paths
+    
+    def get_direction(self, currentpos, newpos):
+        if currentpos[0]>newpos[0]:
+            return "^"
+        elif currentpos[0]<newpos[0]:
+            return "v"
+        elif currentpos[1]>newpos[1]:
+            return "<"
+        elif currentpos[1]<newpos[1]:
+            return ">"
+        else:
+            return None
 
 
-        pass
-    '''
-    find 
-    
-    
-    
-    
-    '''
+
+    def find_paths(self, cords_stepped):
+
+        
+        
+        
+
+        possible_paths=self.get_possible_paths()
+        for idx,pp in enumerate(possible_paths):
+            a=str(pp)
+            if str(pp) in cords_stepped:
+                possible_paths.pop(idx)
+
+        if self.pos==self.end:#find the end
+            print(cords_stepped, self.score)
+            return True
+        if len(possible_paths)==0:#dead end
+            return False
+        if str(self.pos) in cords_stepped:
+            return False
+        cords_stepped.append(str(self.pos.copy()))
+
+        while len(possible_paths)>0:
+            path=possible_paths.pop()
+            newdirection=self.get_direction(self.pos, path)
+
+            if newdirection==self.direction:
+                self.step()
+            else:
+                self.turn(newdirection)
+                self.step()
+            self.find_paths(cords_stepped)
+            
+
+
+
+
 
 def printmap(map):
 
@@ -86,25 +141,32 @@ def get_cords(map):
     return start, goal, walls, path
 
 def find_crossroads(path):
+    cross=[]
     list_crossroads=[]
-    list_forks=[]
+    
     for step in path:
         forks=0
-        
+        list_forks=[]    
         if [step[0]+1,step[1] ] in path:
+            list_forks.append([step[0]+1,step[1] ])
             forks+=1
         if [step[0]-1, step[1]] in path:
+            list_forks.append([step[0]-1,step[1] ])
             forks+=1
         if [step[0], step[1]+1] in path:
+            list_forks.append([step[0],step[1]+1 ])
             forks+=1
         if [step[0], step[1]-1] in path:
+            list_forks.append([step[0],step[1]-1 ])
             forks+=1
         
         if forks>2:
-            list_crossroads.append(step)
-            list_forks.append(forks-1)
+            cross.append({"cordinate":step, "forks":list_forks})
+            
+
     
-    return list_crossroads, list_forks
+    
+    return cross
 
 
 
@@ -113,10 +175,14 @@ if __name__ == "__main__":
 
     map=read_map(filename)
     start, goal, walls, path=get_cords(map)
-    xroads, num, forks=find_crossroads(path)
+    list_crossroads=find_crossroads(path)
+
+    
 
 
     printmap(map)
+    
 
-    print(path)
-    print(xroads)
+    w=walker(start, goal, path)
+    cords_stepped=[]
+    w.find_paths(cords_stepped)
